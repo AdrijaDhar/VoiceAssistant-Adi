@@ -7,32 +7,30 @@ from datetime import datetime
 
 
 def extract_time_and_text(user_input):
-    # Regular expression to find time in the format of 'HH:MM' or 'H:MM a.m./p.m.'
-    time_pattern = r'(\d{1,2}:\d{2}\s?(?:a\.m\.|p\.m\.)?)'
+    # Regular expression to find time in the format 'HH:MM' or 'H:MM a.m./p.m.'
+    time_pattern = r'(\b\d{1,2}:\d{2}\s?(?:a\.m\.|p\.m\.)?\b)'
     match = re.search(time_pattern, user_input, re.IGNORECASE)
 
     if match:
         time_str = match.group(0).strip()
-        # Convert to 24-hour format if it's a.m./p.m. format
-        if 'a.m.' in time_str.lower() or 'p.m.' in time_str.lower():
-            try:
+        
+        try:
+            # Convert to 24-hour format if it's in the 'a.m.' or 'p.m.' format
+            if 'a.m.' in time_str.lower() or 'p.m.' in time_str.lower():
                 time_obj = datetime.strptime(time_str, '%I:%M %p')
-            except ValueError:
-                print("Invalid time format.")
-                speak_text("Invalid time format.")
-                return None, None
-        else:
-            try:
+            else:
+                # Assume it's a 24-hour format
                 time_obj = datetime.strptime(time_str, '%H:%M')
-            except ValueError:
-                print("Invalid time format.")
-                speak_text("Invalid time format.")
-                return None, None
 
-        reminder_time = time_obj.strftime('%H:%M')
-        # Extract the reminder text by removing the time part
-        reminder_text = user_input.replace(time_str, '').replace('set reminder at', '').strip()
-        return reminder_time, reminder_text
+            reminder_time = time_obj.strftime('%H:%M')
+            # Extract the reminder text by removing the time part
+            reminder_text = user_input.replace(time_str, '').replace('set reminder at', '').strip()
+            return reminder_time, reminder_text
+
+        except ValueError:
+            print("Invalid time format.")
+            speak_text("Invalid time format.")
+            return None, None
     else:
         return None, None
 
