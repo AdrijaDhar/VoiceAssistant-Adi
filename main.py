@@ -8,7 +8,7 @@ from datetime import datetime
 
 def extract_time_and_text(user_input):
     # Regular expression to find time in the format 'HH:MM' or 'H:MM a.m./p.m.'
-    time_pattern = r'(\b\d{1,2}:\d{2}\s?(?:a\.m\.|p\.m\.)?\b)'
+    time_pattern = r'(\b\d{1,2}:\d{2}\s?(?:a\.m\.|p\.m\.)?)'
     match = re.search(time_pattern, user_input, re.IGNORECASE)
 
     if match:
@@ -35,21 +35,39 @@ def extract_time_and_text(user_input):
         return None, None
 
 
-def main():
-    user_input = capture_voice_input()
-    if user_input:
-        if "reminder" in user_input:
-            reminder_time, reminder_text = extract_time_and_text(user_input)
-            if reminder_time:
-                if not reminder_text:
-                    reminder_text = "This is your reminder."  # Default text if not specified
-                set_reminder(reminder_text, reminder_time)
-            else:
-                print("Could not find a valid time in the input.")
-                speak_text("Could not find a valid time in the input.")
+
+def ask_to_continue():
+    speak_text("Do you have any other queries, or should I stop?")
+    response = capture_voice_input()
+    if response:
+        if "stop" in response.lower():
+            speak_text("Okay, stopping now. Have a great day!")
+            return False
         else:
-            print("Feature not recognized. Please try again.")
-            speak_text("Feature not recognized. Please try again.")
+            speak_text("Sure, I am here to help. Please tell me your next query.")
+            return True
+    return True
+
+def main():
+    while True:
+        user_input = capture_voice_input()
+        if user_input:
+            if "reminder" in user_input:
+                reminder_time, reminder_text = extract_time_and_text(user_input)
+                if reminder_time:
+                    if not reminder_text:
+                        reminder_text = "This is your reminder."  # Default text if not specified
+                    set_reminder(reminder_text, reminder_time)
+                    if not ask_to_continue():
+                        break
+                else:
+                    print("Could not find a valid time in the input.")
+                    speak_text("Could not find a valid time in the input.")
+            else:
+                print("Feature not recognized. Please try again.")
+                speak_text("Feature not recognized. Please try again.")
+        else:
+            speak_text("Sorry, I didn't catch that. Could you please repeat?")
 
 if __name__ == "__main__":
     main()
