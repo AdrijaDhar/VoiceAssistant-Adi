@@ -86,7 +86,9 @@ def get_time_for_city(city):
         if matching_timezone:
             timezone_response = requests.get(f"http://worldtimeapi.org/api/timezone/{matching_timezone}").json()
             parsed_time = parser.isoparse(timezone_response["datetime"]).strftime("%I:%M %p")
-            speak(f"The current time in {city} is {parsed_time}.")
+            result = f"The current time in {city} is {parsed_time}."
+            print(result)
+            speak(result)
         else:
             speak(f"Sorry, I couldn't find the timezone for {city}.")
 
@@ -104,7 +106,9 @@ def fetch_weather(query):
         if weather_data["cod"] == 200:
             temp = weather_data["main"]["temp"]
             description = weather_data["weather"][0]["description"]
-            speak(f"The weather in {city} is {description} with a temperature of {temp}°C.")
+            result = f"The weather in {city} is {description} with a temperature of {temp}°C."
+            print(result)
+            speak(result)
         else:
             speak(f"Could not fetch weather for {city}.")
     except Exception as e:
