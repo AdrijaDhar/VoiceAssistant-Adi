@@ -16,7 +16,7 @@ from src.features.reminder import set_reminder  # Use Mac Calendar app for remin
 from fuzzywuzzy import process
 import webbrowser
 from googlesearch import search
-
+from src.features.music import play_music
 # Load SpaCy model
 nlp = spacy.load("en_core_web_sm")
 urllib3.disable_warnings(urllib3.exceptions.NotOpenSSLWarning)
@@ -150,6 +150,11 @@ def process_query(query):
     elif "search" in query or "open" in query or "webpage" in query:
         search_query = query.replace("search", "").replace("open", "").replace("webpage", "").strip()
         perform_google_search(search_query)
+    elif "play" in query:
+        speak("On which platform, Spotify or YouTube?")
+        platform = get_voice_input().lower()
+        track_name = query.replace("play", "").strip()
+        play_music(track_name, platform)
 
     else:
         print("I'm not sure how to help with that.")
