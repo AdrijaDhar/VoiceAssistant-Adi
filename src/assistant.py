@@ -14,6 +14,8 @@ from src.voice_input import get_text_input, get_voice_input
 from src.voice_output import speak
 from src.features.reminder import set_reminder  # Use Mac Calendar app for reminders
 from fuzzywuzzy import process
+import webbrowser
+from googlesearch import search
 
 # Load SpaCy model
 nlp = spacy.load("en_core_web_sm")
@@ -144,9 +146,38 @@ def process_query(query):
         reminder_text = get_voice_input() or input("Enter the reminder text: ")
         minutes = get_minutes_from_user()
         set_reminder(reminder_text, minutes)
+    
+    elif "search" in query or "open" in query or "webpage" in query:
+        search_query = query.replace("search", "").replace("open", "").replace("webpage", "").strip()
+        perform_google_search(search_query)
 
     else:
+        print("I'm not sure how to help with that.")
         speak("I'm not sure how to help with that.")
+
+
+
+def perform_google_search(query):
+    """Perform a Google search, return the top result, and open it in the browser."""
+    try:
+        speak(f"Searching Google for {query}.")
+        print(f"Searching Google for {query}...")
+
+        # Perform the search and get the first result
+        for result in search(query, num_results=1):
+            print(f"Top result: {result}")
+            speak(f"Opening {result}")
+            
+            # Open the URL in the default web browser
+            webbrowser.open(result)
+            return result
+
+    except Exception as e:
+        print(f"Google search error: {e}")
+        speak("Sorry, I couldn't perform the search right now.")
+        return None
+
+
 
 def main():
     """Main function to start the voice assistant."""
