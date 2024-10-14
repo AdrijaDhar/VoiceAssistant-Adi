@@ -14,12 +14,12 @@ def authenticate_gmail():
     """Authenticate the user and return the Gmail API service."""
     creds = None
     if os.path.exists("config/token.json"):
-        creds = Credentials.from_authorized_user_file("config/token.json", SCOPES)
+        creds = Credentials.from_authorized_user_file(".gitignore/token.json", SCOPES)
     if not creds or not creds.valid:
         flow = InstalledAppFlow.from_client_secrets_file(
-            "/Users/adrijadhar/Desktop/Voice Assistant/config/client_secret_785292845338-64kclifmcsaq7c5g16nmh3tqdodkil6a.apps.googleusercontent.com.json", SCOPES)
+            "/Users/adrijadhar/Desktop/Voice Assistant/.gitignore/client_secret_785292845338-64kclifmcsaq7c5g16nmh3tqdodkil6a.apps.googleusercontent.com.json", SCOPES)
         creds = flow.run_local_server(port=0)
-        with open("config/token.json", "w") as token:
+        with open(".gitignore/token.json", "w") as token:
             token.write(creds.to_json())
     service = build('gmail', 'v1', credentials=creds)
     return service

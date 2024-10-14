@@ -1,6 +1,6 @@
 import os
 os.environ["TRANSFORMERS_NO_TF"] = "1"
-
+from src.features.system_commands import open_application
 from datetime import datetime
 import requests
 import pytz
@@ -19,6 +19,13 @@ from googlesearch import search
 from src.features.music import play_music
 from src.features.email_reader import read_unread_emails
 from src.features.notifications import read_recent_notifications
+from src.features.task_automation import (
+    set_brightness, set_volume, mute_volume, unmute_volume,
+    shutdown, restart, empty_trash, lock_screen, sleep
+)
+
+
+
 # Load SpaCy model
 nlp = spacy.load("en_core_web_sm")
 urllib3.disable_warnings(urllib3.exceptions.NotOpenSSLWarning)
@@ -149,7 +156,7 @@ def process_query(query):
         minutes = get_minutes_from_user()
         set_reminder(reminder_text, minutes)
     
-    elif "search" in query or "open" in query or "webpage" in query:
+    elif "search" in query or "webpage" in query:
         search_query = query.replace("search", "").replace("open", "").replace("webpage", "").strip()
         perform_google_search(search_query)
     elif "play" in query:
@@ -161,6 +168,50 @@ def process_query(query):
         read_unread_emails()
     elif "notification" in query or "notifications" in query:
         read_recent_notifications()
+    elif "open" in query:
+        # Extract the app name from the query
+        app_name = (
+            query.replace("open", "")
+            .replace("app", "")
+            .strip()
+            .title()  # Capitalize the app name
+        )
+
+        print(f"Trying to open: {app_name}")  # Debugging print statement
+
+        # Try to open the app; fallback to Google search if not found
+        if not open_application(app_name):
+            speak(f"I couldn't find {app_name}. Searching on Google.")
+            perform_google_search(app_name)
+        return
+    
+    elif "brightness" in query:
+        level = int(query.split("to")[-1].strip().replace("%", ""))
+        set_brightness(level)
+
+    elif "volume" in query:
+        if "mute" in query:
+            mute_volume()
+        elif "unmute" in query:
+            unmute_volume()
+        else:
+            level = int(query.split("to")[-1].strip().replace("%", ""))
+            set_volume(level)
+
+    elif "shutdown" in query:
+        shutdown()
+
+    elif "restart" in query:
+        restart()
+
+    elif "empty trash" in query:
+        empty_trash()
+
+    elif "lock screen" in query:
+        lock_screen()
+
+    elif "sleep" in query:
+        sleep()
     else:
         print("I'm not sure how to help with that.")
         speak("I'm not sure how to help with that.")
