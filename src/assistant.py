@@ -171,112 +171,117 @@ def detect_intent_and_keywords(query):
 
 
 def process_query(query):
-    """Process the user's query."""
-    query = query.lower()
-    intent, keywords = detect_intent_and_keywords(query)
-    if "date" in query:
-        today = datetime.now().strftime("%A, %B %d, %Y")
-        speak(f"Today's date is {today}.")
-    
-    elif "time" in query:
-        city = get_city_from_query(query)
-        get_time_for_city(city)
+    """Process the user's query and return the response string."""
+    try:
+        query = query.lower().strip()
+        intent, keywords = detect_intent_and_keywords(query)
 
-    elif "weather" in query:
-        fetch_weather(query)
+        if "date" in query:
+            today = datetime.now().strftime("%A, %B %d, %Y")
+            response = f"Today's date is {today}."
 
-    elif "reminder" in query:
-        speak("What should I remind you about?")
-        reminder_text = get_voice_input() or input("Enter the reminder text: ")
-        minutes = get_minutes_from_user()
-        set_reminder(reminder_text, minutes)
-    
-    elif "search" in query or "webpage" in query:
-        search_query = query.replace("search", "").replace("open", "").replace("webpage", "").strip()
-        perform_google_search(search_query)
-    elif "play" in query:
-        speak("On which platform, Spotify or YouTube?")
-        platform = get_voice_input().lower()
-        track_name = query.replace("play", "").strip()
-        play_music(track_name, platform)
-    elif "email" in query or "emails" in query:
-        read_unread_emails()
-    elif "notification" in query or "notifications" in query:
-        read_recent_notifications()
-    elif "open" in query:
-        # Extract the app name from the query
-        app_name = (
-            query.replace("open", "")
-            .replace("app", "")
-            .strip()
-            .title()  # Capitalize the app name
-        )
+        elif "time" in query:
+            city = get_city_from_query(query)
+            response = get_time_for_city(city)
 
-        print(f"Trying to open: {app_name}")  # Debugging print statement
+        elif "weather" in query:
+            response = fetch_weather(query)
 
-        # Try to open the app; fallback to Google search if not found
-        if not open_application(app_name):
-            speak(f"I couldn't find {app_name}. Searching on Google.")
-            perform_google_search(app_name)
-        return
-    
-    elif "brightness" in query:
-        level = int(query.split("to")[-1].strip().replace("%", ""))
-        set_brightness(level)
+        elif "reminder" in query:
+            speak("What should I remind you about?")
+            reminder_text = get_voice_input() or input("Enter the reminder text: ")
+            minutes = get_minutes_from_user()
+            response = set_reminder(reminder_text, minutes)
 
-    elif "volume" in query:
-        if "mute" in query:
-            mute_volume()
-        elif "unmute" in query:
-            unmute_volume()
-        else:
+        elif "search" in query or "webpage" in query:
+            search_query = query.replace("search", "").replace("open", "").replace("webpage", "").strip()
+            response = perform_google_search(search_query)
+
+        elif "play" in query:
+            speak("On which platform, Spotify or YouTube?")
+            platform = get_voice_input().lower()
+            track_name = query.replace("play", "").strip()
+            response = play_music(track_name, platform)
+
+        elif "email" in query or "emails" in query:
+            response = read_unread_emails()
+
+        elif "notification" in query or "notifications" in query:
+            response = read_recent_notifications()
+
+        elif "open" in query:
+            app_name = query.replace("open", "").replace("app", "").strip().title()
+            if open_application(app_name):
+                response = f"{app_name} opened successfully."
+            else:
+                response = f"I couldn't find {app_name}. Searching on Google..."
+                perform_google_search(app_name)
+
+        elif "brightness" in query:
             level = int(query.split("to")[-1].strip().replace("%", ""))
-            set_volume(level)
+            response = set_brightness(level)
 
-    elif "shutdown" in query:
-        shutdown()
+        elif "volume" in query:
+            if "mute" in query:
+                response = mute_volume()
+            elif "unmute" in query:
+                response = unmute_volume()
+            else:
+                level = int(query.split("to")[-1].strip().replace("%", ""))
+                response = set_volume(level)
 
-    elif "restart" in query:
-        restart()
+        elif "shutdown" in query:
+            response = shutdown()
 
-    elif "empty trash" in query:
-        empty_trash()
+        elif "restart" in query:
+            response = restart()
 
-    elif "lock screen" in query:
-        lock_screen()
+        elif "empty trash" in query:
+            response = empty_trash()
 
-    elif "sleep" in query:
-        sleep()
-    elif intent == "morning_briefing":
-        print("Fetching morning briefing...")
-        get_morning_brief()  # Trigger morning briefing
+        elif "lock screen" in query:
+            response = lock_screen()
 
-    elif intent == "news":
-        print(f"Fetching news for: {keywords or 'technology'}")
-        get_news(keywords or "technology")
-    elif intent == "translation":
-        # Handle translation queries
-        if "in" in keywords:
-            text, target_lang = keywords.split("in", 1)
-        elif "to" in keywords:
-            text, target_lang = keywords.split("to", 1)
+        elif "sleep" in query:
+            response = sleep()
+
+        elif intent == "morning_briefing":
+            response = get_morning_brief()
+
+        elif intent == "news":
+            response = get_news(keywords or "technology")
+
+        elif intent == "translation":
+            if "in" in keywords:
+                text, _, target_lang = keywords.partition("in")
+            elif "to" in keywords:
+                text, _, target_lang = keywords.partition("to")
+            else:
+                return "Please specify the language for translation."
+
+            text, target_lang = text.strip(), target_lang.strip()
+            lang_map = {"french": "fr", "spanish": "es", "german": "de", "hindi": "hi", "bengali": "bn"}
+
+            if target_lang in lang_map:
+                response = translate_text(text, target_lang=lang_map[target_lang])
+            else:
+                response = f"Sorry, I don't support {target_lang} yet."
+
         else:
-            speak("Please specify the language for translation.")
-            return
+            response = "I'm not sure how to help with that."
 
-        text = text.replace("translate", "").strip()
-        target_lang = target_lang.strip()
+        # Print and speak the response
+        print(response)
+        speak(response)
 
-        # Language mapping
-        lang_map = {"french": "fr", "spanish": "es", "german": "de", "hindi": "hi", "bengali": "bn"}
+        return response  # Ensure the response is returned for UI or logs
 
-        if target_lang in lang_map:
-            translate_text(text, target_lang=lang_map[target_lang])
-        else:
-            speak(f"Sorry, I don't support {target_lang} yet.")
-    else:
-        print("I'm not sure how to help with that.")
-        speak("I'm not sure how to help with that.")
+    except Exception as e:
+        error_message = f"Error: {e}"
+        print(error_message)
+        speak("Something went wrong. Please try again.")
+        return error_message
+
 
 def main():
     """Main function to start the voice assistant."""
