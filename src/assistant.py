@@ -17,6 +17,8 @@ from fuzzywuzzy import process
 import webbrowser
 from googlesearch import search
 from src.features.music import play_music
+from src.features.email_reader import read_unread_emails
+from src.features.notifications import read_recent_notifications
 # Load SpaCy model
 nlp = spacy.load("en_core_web_sm")
 urllib3.disable_warnings(urllib3.exceptions.NotOpenSSLWarning)
@@ -155,7 +157,10 @@ def process_query(query):
         platform = get_voice_input().lower()
         track_name = query.replace("play", "").strip()
         play_music(track_name, platform)
-
+    elif "email" in query or "emails" in query:
+        read_unread_emails()
+    elif "notification" in query or "notifications" in query:
+        read_recent_notifications()
     else:
         print("I'm not sure how to help with that.")
         speak("I'm not sure how to help with that.")
