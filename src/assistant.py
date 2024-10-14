@@ -24,8 +24,7 @@ from src.features.task_automation import (
     shutdown, restart, empty_trash, lock_screen, sleep
 )
 from src.features.news_reader import get_news,get_morning_brief
-
-
+from src.features.translate import translate_text
 
 nlp = spacy.load("en_core_web_sm")
 urllib3.disable_warnings(urllib3.exceptions.NotOpenSSLWarning)
@@ -148,15 +147,28 @@ def perform_google_search(query):
 
 def detect_intent_and_keywords(query):
     """Use NLP to detect intent and extract meaningful keywords."""
-    doc = nlp(query.lower())
+    query = query.lower().strip()
+    doc = nlp(query)
+
     keywords = [token.text for token in doc if token.pos_ in {"NOUN", "PROPN"}]
 
-    # Check if the query requests a morning briefing
+    print(f"DEBUG: Extracted keywords: {keywords}")  # Debugging print
+
+    # Detect translation intent
+    if "translate" in query and ("to" in query or "in" in query):
+        return "translation", query
+
+    # Detect news intent
+    if "news" in query:
+        return "news", " ".join(keywords).strip()
+
+    # Detect morning briefing intent
     if "morning" in query and ("briefing" in query or "news" in query):
         return "morning_briefing", None
 
-    # If no specific intent, treat it as a regular news query with keywords
-    return "news", " ".join(keywords).strip()
+    # Default fallback
+    return "unknown", None
+
 
 def process_query(query):
     """Process the user's query."""
@@ -242,6 +254,26 @@ def process_query(query):
     elif intent == "news":
         print(f"Fetching news for: {keywords or 'technology'}")
         get_news(keywords or "technology")
+    elif intent == "translation":
+        # Handle translation queries
+        if "in" in keywords:
+            text, target_lang = keywords.split("in", 1)
+        elif "to" in keywords:
+            text, target_lang = keywords.split("to", 1)
+        else:
+            speak("Please specify the language for translation.")
+            return
+
+        text = text.replace("translate", "").strip()
+        target_lang = target_lang.strip()
+
+        # Language mapping
+        lang_map = {"french": "fr", "spanish": "es", "german": "de", "hindi": "hi", "bengali": "bn"}
+
+        if target_lang in lang_map:
+            translate_text(text, target_lang=lang_map[target_lang])
+        else:
+            speak(f"Sorry, I don't support {target_lang} yet.")
     else:
         print("I'm not sure how to help with that.")
         speak("I'm not sure how to help with that.")
