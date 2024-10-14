@@ -23,7 +23,7 @@ from src.features.task_automation import (
     set_brightness, set_volume, mute_volume, unmute_volume,
     shutdown, restart, empty_trash, lock_screen, sleep
 )
-from src.features.news_reader import get_news
+from src.features.news_reader import get_news,get_morning_brief
 
 
 
@@ -146,12 +146,22 @@ def perform_google_search(query):
         speak("Sorry, I couldn't perform the search right now.")
         return None
 
+def detect_intent_and_keywords(query):
+    """Use NLP to detect intent and extract meaningful keywords."""
+    doc = nlp(query.lower())
+    keywords = [token.text for token in doc if token.pos_ in {"NOUN", "PROPN"}]
 
+    # Check if the query requests a morning briefing
+    if "morning" in query and ("briefing" in query or "news" in query):
+        return "morning_briefing", None
+
+    # If no specific intent, treat it as a regular news query with keywords
+    return "news", " ".join(keywords).strip()
 
 def process_query(query):
     """Process the user's query."""
     query = query.lower()
-
+    intent, keywords = detect_intent_and_keywords(query)
     if "date" in query:
         today = datetime.now().strftime("%A, %B %d, %Y")
         speak(f"Today's date is {today}.")
@@ -225,10 +235,13 @@ def process_query(query):
 
     elif "sleep" in query:
         sleep()
-    elif "news" in query:
-        # Extract category if mentioned, otherwise default to "technology"
-        category = query.replace("news", "").strip() or "technology"
-        get_news(category)
+    elif intent == "morning_briefing":
+        print("Fetching morning briefing...")
+        get_morning_brief()  # Trigger morning briefing
+
+    elif intent == "news":
+        print(f"Fetching news for: {keywords or 'technology'}")
+        get_news(keywords or "technology")
     else:
         print("I'm not sure how to help with that.")
         speak("I'm not sure how to help with that.")

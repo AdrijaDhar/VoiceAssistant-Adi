@@ -44,3 +44,27 @@ def get_news(query):
     except Exception as e:
         print(f"Error fetching news: {e}")
         speak("There was an error fetching the news. Please try again later.")
+
+def get_morning_brief():
+    """Fetch the top 5 headlines across categories for a morning briefing."""
+    categories = ["business", "entertainment", "sports", "technology", "health"]
+    headlines = []
+
+    try:
+        speak("Here is your morning briefing.")
+
+        # Collect one headline from each category
+        for category in categories:
+            articles = google_news.get_news(category)
+            if articles:
+                headline = articles[0]['title']
+                headlines.append((category.capitalize(), headline))
+        
+        # Speak and print the headlines
+        for category, headline in headlines:
+            print(f"{category}: {headline}")
+            speak(f"{category}: {headline}")
+
+    except Exception as e:
+        print(f"Error fetching morning brief: {e}")
+        speak("There was an error fetching your morning brief. Please try again later.")
