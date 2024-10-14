@@ -23,17 +23,14 @@ from src.features.task_automation import (
     set_brightness, set_volume, mute_volume, unmute_volume,
     shutdown, restart, empty_trash, lock_screen, sleep
 )
+from src.features.news_reader import get_news
 
 
 
-# Load SpaCy model
 nlp = spacy.load("en_core_web_sm")
 urllib3.disable_warnings(urllib3.exceptions.NotOpenSSLWarning)
-
-# HuggingFace's NER pipeline
 ner_pipeline = pipeline("ner", model="dslim/bert-base-NER", aggregation_strategy="simple", device=-1)
 
-# Load OpenWeatherMap city data
 with open("city.list.json", "r", encoding="utf-8") as f:
     city_data = json.load(f)
 
@@ -57,7 +54,6 @@ def clean_query_for_ner(query):
     query = re.sub(r"[^\w\s]", "", query)
     query = re.sub(r"\b(?:what|is|the|of|in|right|now|today)\b", "", query, flags=re.IGNORECASE)
     return query.strip()
-
 def get_city_from_query(query):
     """Extract the city name using NER or fallback to fuzzy matching."""
     try:
@@ -77,7 +73,6 @@ def get_city_from_query(query):
         print(f"Error extracting city: {e}")
         speak("Sorry, I couldn't determine the city. Using Kolkata as default.")
         return "Kolkata"
-
 def get_user_location():
     """Get the user's location using IP address."""
     try:
@@ -86,7 +81,6 @@ def get_user_location():
     except Exception as e:
         print(f"Location error: {e}")
         return "Kolkata"
-
 def get_time_for_city(city):
     """Get the time for a city using World Time API."""
     try:
@@ -105,7 +99,6 @@ def get_time_for_city(city):
 
     except Exception as e:
         print(f"Time error: {e}")
-
 def fetch_weather(query):
     """Fetch weather information for a city."""
     api_key = "03affd43bfa223102b782377b13afec0"
@@ -124,7 +117,6 @@ def fetch_weather(query):
             speak(f"Could not fetch weather for {city}.")
     except Exception as e:
         print(f"Weather error: {e}")
-
 def get_minutes_from_user():
     """Prompt user for the number of minutes."""
     for attempt in range(3):
@@ -134,6 +126,27 @@ def get_minutes_from_user():
         if match:
             return int(match.group())
     return int(input("Enter the time in minutes: "))
+def perform_google_search(query):
+    """Perform a Google search, return the top result, and open it in the browser."""
+    try:
+        speak(f"Searching Google for {query}.")
+        print(f"Searching Google for {query}...")
+
+        # Perform the search and get the first result
+        for result in search(query, num_results=1):
+            print(f"Top result: {result}")
+            speak(f"Opening {result}")
+            
+            # Open the URL in the default web browser
+            webbrowser.open(result)
+            return result
+
+    except Exception as e:
+        print(f"Google search error: {e}")
+        speak("Sorry, I couldn't perform the search right now.")
+        return None
+
+
 
 def process_query(query):
     """Process the user's query."""
@@ -212,33 +225,13 @@ def process_query(query):
 
     elif "sleep" in query:
         sleep()
+    elif "news" in query:
+        # Extract category if mentioned, otherwise default to "technology"
+        category = query.replace("news", "").strip() or "technology"
+        get_news(category)
     else:
         print("I'm not sure how to help with that.")
         speak("I'm not sure how to help with that.")
-
-
-
-def perform_google_search(query):
-    """Perform a Google search, return the top result, and open it in the browser."""
-    try:
-        speak(f"Searching Google for {query}.")
-        print(f"Searching Google for {query}...")
-
-        # Perform the search and get the first result
-        for result in search(query, num_results=1):
-            print(f"Top result: {result}")
-            speak(f"Opening {result}")
-            
-            # Open the URL in the default web browser
-            webbrowser.open(result)
-            return result
-
-    except Exception as e:
-        print(f"Google search error: {e}")
-        speak("Sorry, I couldn't perform the search right now.")
-        return None
-
-
 
 def main():
     """Main function to start the voice assistant."""
